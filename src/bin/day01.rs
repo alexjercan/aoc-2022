@@ -4,7 +4,7 @@ fn parse_input(input: impl AsRef<str>) -> Vec<u32> {
         .trim_end()
         .split("\n\n")
         .map(|elf| {
-            aoc::parsing::lines_to_vec::<_, u32>(elf)
+            aoc::parsing::lines_to_vec::<u32>(elf)
                 .unwrap()
                 .into_iter()
                 .sum()

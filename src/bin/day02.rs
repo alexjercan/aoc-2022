@@ -1,6 +1,6 @@
 #[derive(Debug)]
 enum Error {
-    ParseError(String)
+    ParseError(String),
 }
 
 #[derive(Debug)]
@@ -13,10 +13,18 @@ impl std::str::FromStr for Play {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (elf, player) = s.split_once(' ').ok_or_else(|| Error::ParseError(s.to_owned()))?;
+        let (elf, player) = s
+            .split_once(' ')
+            .ok_or_else(|| Error::ParseError(s.to_owned()))?;
 
-        let elf: char = elf.chars().next().ok_or_else(|| Error::ParseError(elf.to_owned()))?;
-        let player: char = player.chars().next().ok_or_else(|| Error::ParseError(player.to_owned()))?;
+        let elf: char = elf
+            .chars()
+            .next()
+            .ok_or_else(|| Error::ParseError(elf.to_owned()))?;
+        let player: char = player
+            .chars()
+            .next()
+            .ok_or_else(|| Error::ParseError(player.to_owned()))?;
 
         return Ok(Play {
             elf: elf as u8 - 'A' as u8 + 1,
@@ -26,7 +34,7 @@ impl std::str::FromStr for Play {
 }
 
 fn parse_input(input: impl AsRef<str>) -> Vec<Play> {
-    aoc::parsing::lines_to_vec::<_, Play>(input).unwrap()
+    aoc::parsing::lines_to_vec::<Play>(input).unwrap()
 }
 
 fn strategy1(play: &Play) -> u32 {
@@ -68,18 +76,22 @@ fn main() {
 mod tests {
     #[test]
     fn part1_example1() {
-        let input = super::parse_input("A Y
+        let input = super::parse_input(
+            "A Y
 B X
-C Z");
+C Z",
+        );
 
         assert_eq!(super::part1(&input), "15");
     }
 
     #[test]
     fn part2_example1() {
-        let input = super::parse_input("A Y
+        let input = super::parse_input(
+            "A Y
 B X
-C Z");
+C Z",
+        );
 
         assert_eq!(super::part2(&input), "12");
     }
