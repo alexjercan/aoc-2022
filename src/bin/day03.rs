@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 fn item_to_value(c: char) -> usize {
     if 'A' <= c && c <= 'Z' {
@@ -21,7 +21,7 @@ fn part1(input: &Vec<Vec<usize>>) -> String {
         .into_iter()
         .map(|r| {
             for i in 0..r.len() / 2 {
-                for j in r.len() / 2 .. r.len() {
+                for j in r.len() / 2..r.len() {
                     if r[i] == r[j] {
                         return r[i];
                     }
