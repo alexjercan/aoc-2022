@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 fn item_to_value(c: char) -> usize {
     if 'A' <= c && c <= 'Z' {
@@ -19,20 +19,16 @@ fn parse_input(input: impl AsRef<str>) -> Vec<Vec<usize>> {
 fn part1(input: &Vec<Vec<usize>>) -> String {
     input
         .into_iter()
-        .flat_map(|r| {
-            let sets = r
-                .chunks(r.len() / 2)
-                .map(|c| HashSet::from_iter(c.iter().cloned()))
-                .collect::<Vec<HashSet<usize>>>();
+        .map(|r| {
+            for i in 0..r.len() / 2 {
+                for j in r.len() / 2 .. r.len() {
+                    if r[i] == r[j] {
+                        return r[i];
+                    }
+                }
+            }
 
-            sets.iter()
-                .skip(1)
-                .fold(sets[0].clone(), |acc, hs| {
-                    acc.intersection(hs).cloned().collect()
-                })
-                .iter()
-                .next()
-                .cloned()
+            return 0;
         })
         .sum::<usize>()
         .to_string()
@@ -42,19 +38,15 @@ fn part2(input: &Vec<Vec<usize>>) -> String {
     input
         .chunks(3)
         .flat_map(|g| {
-            let sets = g
-                .iter()
-                .map(|c| HashSet::from_iter(c.iter().cloned()))
-                .collect::<Vec<HashSet<usize>>>();
-
-            sets.iter()
-                .skip(1)
-                .fold(sets[0].clone(), |acc, hs| {
-                    acc.intersection(hs).cloned().collect()
+            g.into_iter()
+                .flat_map(aoc::collections::unique)
+                .fold(HashMap::new(), |mut acc, c| {
+                    acc.entry(c).and_modify(|e| *e += 1).or_insert(1);
+                    acc
                 })
-                .iter()
-                .next()
-                .cloned()
+                .into_iter()
+                .find_map(|(k, v)| if v == 3 { Some(k) } else { None })
+                .ok_or(0)
         })
         .sum::<usize>()
         .to_string()

@@ -51,22 +51,29 @@ fn parse_input(input: impl AsRef<str>) -> Vec<Pair> {
 }
 
 fn part1(pairs: &Vec<Pair>) -> String {
-    pairs.into_iter().fold(0, |acc, pair| {
-        if (pair.r1.low <= pair.r2.low && pair.r2.high <= pair.r1.high)
-            || (pair.r2.low <= pair.r1.low && pair.r1.high <= pair.r2.high) {
-            return acc + 1;
-        }
-        return acc;
-    }).to_string()
+    pairs
+        .into_iter()
+        .fold(0, |acc, pair| {
+            if (pair.r1.low <= pair.r2.low && pair.r2.high <= pair.r1.high)
+                || (pair.r2.low <= pair.r1.low && pair.r1.high <= pair.r2.high)
+            {
+                return acc + 1;
+            }
+            return acc;
+        })
+        .to_string()
 }
 
 fn part2(pairs: &Vec<Pair>) -> String {
-    pairs.into_iter().fold(0, |acc, pair| {
-        if pair.r1.low <= pair.r2.high && pair.r2.low <= pair.r1.high {
-            return acc + 1;
-        }
-        return acc;
-    }).to_string()
+    pairs
+        .into_iter()
+        .fold(0, |acc, pair| {
+            if pair.r1.low <= pair.r2.high && pair.r2.low <= pair.r1.high {
+                return acc + 1;
+            }
+            return acc;
+        })
+        .to_string()
 }
 
 fn main() {
@@ -80,24 +87,28 @@ fn main() {
 mod tests {
     #[test]
     fn part1_example1() {
-        let input = super::parse_input("2-4,6-8
+        let input = super::parse_input(
+            "2-4,6-8
 2-3,4-5
 5-7,7-9
 2-8,3-7
 6-6,4-6
-2-6,4-8");
+2-6,4-8",
+        );
 
         assert_eq!(super::part1(&input), "2");
     }
 
     #[test]
     fn part2_example1() {
-        let input = super::parse_input("2-4,6-8
+        let input = super::parse_input(
+            "2-4,6-8
 2-3,4-5
 5-7,7-9
 2-8,3-7
 6-6,4-6
-2-6,4-8");
+2-6,4-8",
+        );
 
         assert_eq!(super::part2(&input), "4");
     }
