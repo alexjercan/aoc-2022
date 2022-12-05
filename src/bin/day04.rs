@@ -53,26 +53,19 @@ fn parse_input(input: impl AsRef<str>) -> Vec<Pair> {
 fn part1(pairs: &Vec<Pair>) -> String {
     pairs
         .into_iter()
-        .fold(0, |acc, pair| {
-            if (pair.r1.low <= pair.r2.low && pair.r2.high <= pair.r1.high)
+        .filter(|pair| {
+            (pair.r1.low <= pair.r2.low && pair.r2.high <= pair.r1.high)
                 || (pair.r2.low <= pair.r1.low && pair.r1.high <= pair.r2.high)
-            {
-                return acc + 1;
-            }
-            return acc;
         })
+        .count()
         .to_string()
 }
 
 fn part2(pairs: &Vec<Pair>) -> String {
     pairs
         .into_iter()
-        .fold(0, |acc, pair| {
-            if pair.r1.low <= pair.r2.high && pair.r2.low <= pair.r1.high {
-                return acc + 1;
-            }
-            return acc;
-        })
+        .filter(|pair| pair.r1.low <= pair.r2.high && pair.r2.low <= pair.r1.high)
+        .count()
         .to_string()
 }
 
