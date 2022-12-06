@@ -6,7 +6,7 @@ fn parse_input(input: impl AsRef<str>) -> Vec<char> {
 
 fn solve(input: &Vec<char>, window: usize) -> usize {
     for i in 0..input.len() - window {
-        let s = &input[i..i+window].iter().collect::<HashSet<_>>();
+        let s = &input[i..i + window].iter().collect::<HashSet<_>>();
 
         if s.len() == window {
             return i + window;
