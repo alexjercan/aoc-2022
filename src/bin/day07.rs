@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
+const TOTAL_SPACE: usize = 70000000;
+const UPDATE_SPACE: usize = 30000000;
+
 #[derive(Debug, Clone)]
 enum Node {
     Directory(String),
     File(String, usize),
 }
-
-const TOTAL_SPACE: usize = 70000000;
-const UPDATE_SPACE: usize = 30000000;
 
 impl FromStr for Node {
     type Err = aoc::error::Error;
@@ -41,8 +41,8 @@ fn parse_input(input: impl AsRef<str>) -> Vec<Vec<Node>> {
         .collect::<Vec<Vec<Node>>>()
 }
 
-fn dfs(dir: Node, walk: &mut Vec<Vec<Node>>, result: &mut Vec<usize>) -> usize {
-    match dir {
+fn dfs(node: Node, walk: &mut Vec<Vec<Node>>, result: &mut Vec<usize>) -> usize {
+    match node {
         Node::File(_, size) => size,
         Node::Directory(_) => {
             let nodes = walk.remove(0);
