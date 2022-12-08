@@ -8,4 +8,5 @@ name = "aoc"
 path = "src/util/lib.rs"
 
 [dependencies]
-anyhow = "1.0.66"
+itertools = "0.10.5"
+take-until = "0.1.0"
