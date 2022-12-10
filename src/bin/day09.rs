@@ -114,7 +114,7 @@ fn part2(input: &Vec<Move>) -> String {
         let mut running = true;
         while running {
             for i in 1..knots.len() {
-                let head = &knots[i-1].clone();
+                let head = &knots[i - 1].clone();
                 let tail = &mut knots[i];
 
                 if !tail.is_touching(&head) {
@@ -123,7 +123,7 @@ fn part2(input: &Vec<Move>) -> String {
             }
 
             running = (1..knots.len()).any(|i| {
-                let head = &knots[i-1];
+                let head = &knots[i - 1];
                 let tail = &knots[i];
 
                 return !tail.is_touching(&head);
@@ -145,28 +145,32 @@ fn main() {
 mod tests {
     #[test]
     fn part1_example1() {
-        let input = super::parse_input("R 4
+        let input = super::parse_input(
+            "R 4
 U 4
 L 3
 D 1
 R 4
 D 1
 L 5
-R 2");
+R 2",
+        );
 
         assert_eq!(super::part1(&input), "13");
     }
 
     #[test]
     fn part2_example1() {
-        let input = super::parse_input("R 5
+        let input = super::parse_input(
+            "R 5
 U 8
 L 8
 D 3
 R 17
 D 10
 L 25
-U 20");
+U 20",
+        );
 
         assert_eq!(super::part2(&input), "36");
     }
