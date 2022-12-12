@@ -53,7 +53,6 @@ impl Operation {
     }
 }
 
-
 #[derive(Debug, Clone)]
 struct Test {
     divisor: usize,
@@ -67,7 +66,8 @@ impl FromStr for Test {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut lines = s.lines().into_iter();
 
-        let divisor = lines.next()
+        let divisor = lines
+            .next()
             .ok_or(Self::Err::ParseError(
                 "should have a line for test".to_string(),
             ))?
