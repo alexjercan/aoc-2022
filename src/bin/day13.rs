@@ -76,26 +76,27 @@ fn from_str_helper<I>(chars: &mut Peekable<I>) -> Result<PacketData, aoc::error:
 where
     I: Iterator<Item = char>,
 {
-    match chars.peek() {
+    match chars.next() {
         Some('[') => {
+            if let Some(']') = chars.peek() {
+                chars.next();
+                return Ok(PacketData::List(vec![]));
+            }
+
             let mut data = Vec::new();
 
             loop {
+                data.push(from_str_helper(chars)?);
+
                 if let Some(']') = chars.next() {
                     break;
                 }
-
-                let a = from_str_helper(chars)?;
-                data.push(a);
             }
 
             return Ok(PacketData::List(data));
         }
-        Some(']') => {
-            return Ok(PacketData::List(Vec::new()));
-        }
-        Some(_) => {
-            let mut digits = Vec::new();
+        Some(c) => {
+            let mut digits = vec![c];
 
             loop {
                 if chars.peek() == Some(&&']') || chars.peek() == Some(&&',') {
