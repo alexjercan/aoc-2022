@@ -119,7 +119,7 @@ fn parse_input(input: impl AsRef<str>) -> Vec<Line> {
     aoc::parsing::lines_to_vec::<Line>(input.as_ref()).expect("to have correct aoc input")
 }
 
-fn intersect(a: &(i64, i64), b: &(i64, i64)) -> Option<(i64, i64)> {
+fn union(a: &(i64, i64), b: &(i64, i64)) -> Option<(i64, i64)> {
     if (a.0 <= b.1 && b.0 <= a.1) || (a.1.abs_diff(b.0) <= 1) || (b.1.abs_diff(a.0) <= 1) {
         return Some((a.0.min(b.0), a.1.max(b.1)));
     }
@@ -127,14 +127,7 @@ fn intersect(a: &(i64, i64), b: &(i64, i64)) -> Option<(i64, i64)> {
     return None;
 }
 
-fn part1(input: &Vec<Line>, y_level: i64) -> String {
-    let beacon_xs = input
-        .into_iter()
-        .filter(|line| line.b.y == y_level)
-        .map(|line| line.b.x)
-        .unique()
-        .collect::<Vec<i64>>();
-
+fn solution(input: &Vec<Line>, y_level: i64) -> Vec<(i64, i64)> {
     return input
         .into_iter()
         .filter(|line| (line.s.y - y_level).abs() <= line.dist)
@@ -147,7 +140,7 @@ fn part1(input: &Vec<Line>, y_level: i64) -> String {
         .fold(Vec::new(), |mut acc, int| {
             if acc.is_empty() {
                 return vec![int];
-            } else if let Some(int) = intersect(acc.last().unwrap(), &int) {
+            } else if let Some(int) = union(acc.last().unwrap(), &int) {
                 *acc.last_mut().unwrap() = int;
 
                 return acc;
@@ -156,7 +149,18 @@ fn part1(input: &Vec<Line>, y_level: i64) -> String {
 
                 return acc;
             }
-        })
+        });
+}
+
+fn part1(input: &Vec<Line>, y_level: i64) -> String {
+    let beacon_xs = input
+        .into_iter()
+        .filter(|line| line.b.y == y_level)
+        .map(|line| line.b.x)
+        .unique()
+        .collect::<Vec<i64>>();
+
+    return solution(input, y_level)
         .into_iter()
         .map(|int| {
             let mut total = int.1 - int.0 + 1;
@@ -173,44 +177,13 @@ fn part1(input: &Vec<Line>, y_level: i64) -> String {
         .to_string();
 }
 
-fn yeet(input: &Vec<Line>, y_level: i64) -> Option<i64> {
-    let input = input
-        .into_iter()
-        .filter(|line| (line.s.y - y_level).abs() <= line.dist)
-        .map(|line| {
-            let spread = line.dist - (line.s.y - y_level).abs();
-
-            return (line.s.x - spread, line.s.x + spread);
-        })
-        .sorted()
-        .fold(Vec::new(), |mut acc, int| {
-            if acc.is_empty() {
-                return vec![int];
-            } else if let Some(int) = intersect(acc.last().unwrap(), &int) {
-                *acc.last_mut().unwrap() = int;
-
-                return acc;
-            } else {
-                acc.push(int);
-
-                return acc;
-            }
-        });
-
-    if input.len() == 1 {
-        return None;
-    }
-
-    return Some(input.first()?.1 + 1);
-}
-
 fn part2(input: &Vec<Line>, y_level: i64) -> String {
     for row in 0..=y_level {
-        if let Some(col) = yeet(input, row) {
-            println!("{}, {}", row, col);
+        let intervals = solution(input, row);
+        if intervals.len() > 1 {
+            let col = intervals.first().unwrap().1 + 1;
             return (4000000 * col + row).to_string();
         }
-        // 13673971349056
     }
 
     "".to_owned()

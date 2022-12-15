@@ -183,7 +183,7 @@ impl From<Vec<Line>> for World {
 
 impl ToString for World {
     fn to_string(&self) -> String {
-        let (min_x, max_x, min_y, max_y) = self.rocks.clone().into_iter().fold(
+        let (min_x, max_x, _, max_y) = self.rocks.clone().into_iter().fold(
             (usize::MAX, usize::MIN, usize::MAX, usize::MIN),
             |(min_x, max_x, min_y, max_y), p| {
                 (
