@@ -107,20 +107,20 @@ impl World {
             }
 
             let pn = Point::new(p.x, p.y + 1);
-            if !self.rocks.contains(&pn) && !self.sands.contains(&pn)  {
+            if !self.rocks.contains(&pn) && !self.sands.contains(&pn) {
                 p.y += 1;
                 continue;
             }
 
             let pn = Point::new(p.x - 1, p.y + 1);
-            if !self.rocks.contains(&pn) && !self.sands.contains(&pn)  {
+            if !self.rocks.contains(&pn) && !self.sands.contains(&pn) {
                 p.x -= 1;
                 p.y += 1;
                 continue;
             }
 
             let pn = Point::new(p.x + 1, p.y + 1);
-            if !self.rocks.contains(&pn) && !self.sands.contains(&pn)  {
+            if !self.rocks.contains(&pn) && !self.sands.contains(&pn) {
                 p.x += 1;
                 p.y += 1;
                 continue;
@@ -144,20 +144,20 @@ impl World {
             }
 
             let pn = Point::new(p.x, p.y + 1);
-            if !self.rocks.contains(&pn) && !self.sands.contains(&pn)  {
+            if !self.rocks.contains(&pn) && !self.sands.contains(&pn) {
                 p.y += 1;
                 continue;
             }
 
             let pn = Point::new(p.x - 1, p.y + 1);
-            if !self.rocks.contains(&pn) && !self.sands.contains(&pn)  {
+            if !self.rocks.contains(&pn) && !self.sands.contains(&pn) {
                 p.x -= 1;
                 p.y += 1;
                 continue;
             }
 
             let pn = Point::new(p.x + 1, p.y + 1);
-            if !self.rocks.contains(&pn) && !self.sands.contains(&pn)  {
+            if !self.rocks.contains(&pn) && !self.sands.contains(&pn) {
                 p.x += 1;
                 p.y += 1;
                 continue;
@@ -200,10 +200,14 @@ impl ToString for World {
         let width = max_x - min_x + 1;
         let height = max_y - min_y + 1;
 
-        let map = self.rocks.clone().into_iter().fold(vec![vec!['.'; width]; height], |mut acc, p| {
-            acc[p.y - min_y][p.x - min_x] = '#';
-            return acc;
-        });
+        let map =
+            self.rocks
+                .clone()
+                .into_iter()
+                .fold(vec![vec!['.'; width]; height], |mut acc, p| {
+                    acc[p.y - min_y][p.x - min_x] = '#';
+                    return acc;
+                });
 
         let mut map = self.sands.clone().into_iter().fold(map, |mut acc, p| {
             if p.y > min_y && p.x > min_x && p.y - min_y < height && p.x - min_x < width {
