@@ -168,7 +168,7 @@ fn parse_input(input: impl AsRef<str>) -> Input {
     return shortest_paths(&pairs);
 }
 
-fn part1(input: &Input) -> String {
+fn compute_dp(input: &Input) -> Vec<Vec<Vec<i64>>> {
     let location_size = input.mapping.len();
     let bitset_size = 1 << location_size;
     let mut dp: Vec<Vec<Vec<i64>>> = vec![vec![vec![i64::MIN; bitset_size]; location_size]; 31];
@@ -178,9 +178,7 @@ fn part1(input: &Input) -> String {
         dp[d + 1][k][1 << k] = 0;
     }
 
-    let mut ans = 0;
     for i in 1..dp.len() {
-        println!("{}", i);
         for j in 0..bitset_size {
             for k in 0..location_size {
                 let flow = (0..location_size).filter_map(|i| {
@@ -195,8 +193,6 @@ fn part1(input: &Input) -> String {
                 if hold > dp[i][k][j] {
                     dp[i][k][j] = hold;
                 }
-
-                ans = ans.max(dp[i][k][j]);
 
                 if (1 << k) & j == 0 {
                     continue;
@@ -222,18 +218,54 @@ fn part1(input: &Input) -> String {
         }
     }
 
+    return dp;
+}
+
+fn part1(dp: &Vec<Vec<Vec<i64>>>) -> String {
+    let mut ans = 0;
+
+    for k in 0..dp[0].len() {
+        for j in 0..dp[0][k].len() {
+            ans = ans.max(dp[30][k][j]);
+        }
+    }
+
     return ans.to_string();
 }
 
-fn part2(input: &Input) -> String {
-    "".to_owned()
+fn part2(dp: &Vec<Vec<Vec<i64>>>) -> String {
+    let mut ans = 0;
+
+    for i in 0..dp[0][0].len() {
+        for j in 0..dp[0][0].len() {
+            if i & j != 0 {
+                continue;
+            }
+
+            let mut a = i64::MIN;
+            let mut b = i64::MIN;
+
+            for k in 0..dp[0].len() {
+                a = a.max(dp[26][k][i]);
+                b = b.max(dp[26][k][j]);
+            }
+
+            if let Some(num) = a.checked_add(b) {
+                ans = ans.max(num);
+            }
+        }
+    }
+
+    return ans.to_string();
 }
 
 fn main() {
     let input = parse_input(aoc::input::read_from_stdin());
 
-    println!("Part 1: {}", part1(&input));
-    println!("Part 2: {}", part2(&input));
+    let dp = compute_dp(&input);
+
+    println!("Part 1: {}", part1(&dp));
+    println!("Part 2: {}", part2(&dp));
 }
 
 #[cfg(test)]
@@ -251,10 +283,10 @@ Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II");
 
-        assert_eq!(super::part1(&input), "1651");
+        assert_eq!(super::part1(&super::compute_dp(&input)), "1651");
     }
 
-    // #[test]
+    #[test]
     fn part2_example1() {
         let input = super::parse_input("Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
@@ -268,6 +300,6 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II");
 
 
-        assert_eq!(super::part2(&input), "1707");
+        assert_eq!(super::part2(&super::compute_dp(&input)), "1707");
     }
 }
