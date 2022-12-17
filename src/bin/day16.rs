@@ -155,7 +155,12 @@ fn shortest_paths(edges: &HashMap<String, (usize, Vec<String>)>) -> Input {
         }
     }
 
-    return Input { mapping: non_zero, dists: result, flows, start: 0 };
+    return Input {
+        mapping: non_zero,
+        dists: result,
+        flows,
+        start: 0,
+    };
 }
 
 fn parse_input(input: impl AsRef<str>) -> Input {
@@ -181,13 +186,15 @@ fn compute_dp(input: &Input) -> Vec<Vec<Vec<i64>>> {
     for i in 1..dp.len() {
         for j in 0..bitset_size {
             for k in 0..location_size {
-                let flow = (0..location_size).filter_map(|i| {
-                    if (1 << i) & j == 0 {
-                        return None;
-                    } else {
-                        return Some(input.flows[i]);
-                    }
-                }).sum::<usize>() as i64;
+                let flow = (0..location_size)
+                    .filter_map(|i| {
+                        if (1 << i) & j == 0 {
+                            return None;
+                        } else {
+                            return Some(input.flows[i]);
+                        }
+                    })
+                    .sum::<usize>() as i64;
 
                 let hold = dp[i - 1][k][j] + flow;
                 if hold > dp[i][k][j] {
@@ -272,7 +279,8 @@ fn main() {
 mod tests {
     #[test]
     fn part1_example1() {
-        let input = super::parse_input("Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
+        let input = super::parse_input(
+            "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
 Valve CC has flow rate=2; tunnels lead to valves DD, BB
 Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
@@ -281,14 +289,16 @@ Valve FF has flow rate=0; tunnels lead to valves EE, GG
 Valve GG has flow rate=0; tunnels lead to valves FF, HH
 Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
-Valve JJ has flow rate=21; tunnel leads to valve II");
+Valve JJ has flow rate=21; tunnel leads to valve II",
+        );
 
         assert_eq!(super::part1(&super::compute_dp(&input)), "1651");
     }
 
     #[test]
     fn part2_example1() {
-        let input = super::parse_input("Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
+        let input = super::parse_input(
+            "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
 Valve CC has flow rate=2; tunnels lead to valves DD, BB
 Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE
@@ -297,8 +307,8 @@ Valve FF has flow rate=0; tunnels lead to valves EE, GG
 Valve GG has flow rate=0; tunnels lead to valves FF, HH
 Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
-Valve JJ has flow rate=21; tunnel leads to valve II");
-
+Valve JJ has flow rate=21; tunnel leads to valve II",
+        );
 
         assert_eq!(super::part2(&super::compute_dp(&input)), "1707");
     }
