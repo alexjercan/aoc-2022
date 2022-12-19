@@ -44,106 +44,90 @@ struct State {
     steps: usize,
 }
 
-struct Solution {
-    best: usize,
+fn recipe_delay(state: &State, recipe: &Recipe) -> usize {
+    return (0..4)
+        .filter_map(|ore| {
+            if recipe[ore] == 0 {
+                return None;
+            } else if recipe[ore] < state.ores[ore] {
+                return Some(0);
+            } else if state.robots[ore] <= 0 {
+                return Some(usize::MAX);
+            } else {
+                return Some(
+                    (recipe[ore] - state.ores[ore] + state.robots[ore] - 1) / state.robots[ore],
+                );
+            }
+        })
+        .max()
+        .unwrap_or(0);
 }
 
-impl Solution {
-    fn new() -> Self {
-        Self { best: 0 }
-    }
+fn winnable(state: &State, max_steps: usize, best: usize) -> bool {
+    let left_steps = max_steps - state.steps;
+    return (left_steps - 1) * left_steps / 2 + state.ores[3] + left_steps * state.robots[3]
+        >= best;
+}
 
-    fn recipe_delay(self: &Self, state: &State, recipe: &Recipe) -> usize {
-        return (0..4)
-            .filter_map(|ore| {
-                if recipe[ore] == 0 {
-                    return None;
-                } else if recipe[ore] < state.ores[ore] {
-                    return Some(0);
-                } else if state.robots[ore] <= 0 {
-                    return Some(usize::MAX);
-                } else {
-                    return Some(
-                        (recipe[ore] - state.ores[ore] + state.robots[ore] - 1) / state.robots[ore],
-                    );
-                }
-            })
-            .max()
-            .unwrap_or(0);
-    }
+fn neighbors(
+    bp: &Blueprint,
+    state: &State,
+    max_steps: usize,
+    robots_cap: &[usize; 4],
+    best: usize,
+) -> Vec<State> {
+    return (0..4)
+        .filter_map(|i| {
+            if state.robots[i] == robots_cap[i] {
+                return None;
+            }
 
-    fn winnable(self: &Self, state: &State, max_steps: usize) -> bool {
-        let left_steps = max_steps - state.steps;
-        return (left_steps - 1) * left_steps / 2 + state.ores[3] + left_steps * state.robots[3]
-            >= self.best;
-    }
+            let recipe = bp.recipes[i];
 
-    fn neighbors(
-        self: &Self,
-        bp: &Blueprint,
-        state: &State,
-        max_steps: usize,
-        robots_cap: &[usize; 4],
-    ) -> Vec<State> {
-        return (0..4)
-            .filter_map(|i| {
-                if state.robots[i] == robots_cap[i] {
-                    return None;
-                }
+            let delay_steps = recipe_delay(state, &recipe);
+            let new_steps = (state.steps + 1).checked_add(delay_steps)?;
 
-                let recipe = bp.recipes[i];
+            if new_steps >= max_steps {
+                return None;
+            }
 
-                let delay_steps = self.recipe_delay(state, &recipe);
-                let new_steps = (state.steps + 1).checked_add(delay_steps)?;
+            let mut new_ores = [0; 4];
+            let mut new_robots = [0; 4];
+            for ore in 0..4 {
+                new_ores[ore] =
+                    state.ores[ore] + state.robots[ore] * (delay_steps + 1) - recipe[ore];
+                new_robots[ore] = state.robots[ore] + usize::from(ore == i);
+            }
 
-                if new_steps >= max_steps {
-                    return None;
-                }
+            let new_state = State {
+                steps: new_steps,
+                ores: new_ores,
+                robots: new_robots,
+            };
 
-                let mut new_ores = [0; 4];
-                let mut new_robots = [0; 4];
-                for ore in 0..4 {
-                    new_ores[ore] =
-                        state.ores[ore] + state.robots[ore] * (delay_steps + 1) - recipe[ore];
-                    new_robots[ore] = state.robots[ore] + usize::from(ore == i);
-                }
+            if !winnable(&new_state, max_steps, best) {
+                return None;
+            }
 
-                let new_state = State {
-                    steps: new_steps,
-                    ores: new_ores,
-                    robots: new_robots,
-                };
+            return Some(new_state);
+        })
+        .collect();
+}
 
-                if !self.winnable(&new_state, max_steps) {
-                    return None;
-                }
+fn quality(
+    bp: &Blueprint,
+    state: &State,
+    max_steps: usize,
+    robots_cap: &[usize; 4],
+    best: &mut usize,
+) {
+    let ns: Vec<State> = neighbors(bp, state, max_steps, robots_cap, *best);
 
-                return Some(new_state);
-            })
-            .collect();
-    }
-
-    fn quality(
-        self: &mut Self,
-        bp: &Blueprint,
-        state: &State,
-        max_steps: usize,
-        robots_cap: &[usize; 4],
-    ) -> usize {
-        let ns: Vec<State> = self.neighbors(bp, state, max_steps, robots_cap);
-
-        let value = if ns.is_empty() {
-            state.ores[3] + state.robots[3] * (max_steps - state.steps)
-        } else {
-            ns.iter()
-                .map(|n| self.quality(bp, n, max_steps, robots_cap))
-                .max()
-                .unwrap_or(0)
-        };
-
-        self.best = self.best.max(value);
-        return value;
-    }
+    if ns.is_empty() {
+        *best = (*best).max(state.ores[3] + state.robots[3] * (max_steps - state.steps));
+    } else {
+        ns.iter().for_each(|n| quality(bp, n, max_steps, robots_cap, best));
+    };
 }
 
 fn solution(bp: &Blueprint, max_steps: usize) -> usize {
@@ -151,10 +135,9 @@ fn solution(bp: &Blueprint, max_steps: usize) -> usize {
     for i in 0..3 {
         robots_cap[i] = bp.recipes.iter().map(|r| r[i]).max().unwrap();
     }
+    let mut best = 0;
 
-    let mut sol = Solution::new();
-
-    return sol.quality(
+    quality(
         bp,
         &State {
             steps: 0,
@@ -163,7 +146,10 @@ fn solution(bp: &Blueprint, max_steps: usize) -> usize {
         },
         max_steps,
         &robots_cap,
+        &mut best,
     );
+
+    return best;
 }
 
 fn part1(input: &Vec<Blueprint>) -> String {
