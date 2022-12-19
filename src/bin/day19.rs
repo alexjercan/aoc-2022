@@ -44,83 +44,105 @@ struct State {
     steps: usize,
 }
 
-fn recipe_delay(state: &State, recipe: &Recipe) -> usize {
-    return (0..4)
-        .filter_map(|ore| {
-            if recipe[ore] == 0 {
-                return None;
-            } else if recipe[ore] < state.ores[ore] {
-                return Some(0);
-            } else if state.robots[ore] <= 0 {
-                return Some(usize::MAX);
-            } else {
-                return Some(
-                    (recipe[ore] - state.ores[ore] + state.robots[ore] - 1) / state.robots[ore],
-                );
-            }
-        })
-        .max()
-        .unwrap_or(0);
+struct Solution {
+    best: usize,
 }
 
-fn winnable(state: &State, max_steps: usize, goal: usize) -> bool {
-    let left_steps = max_steps - state.steps;
-    return (left_steps - 1) * left_steps / 2 + state.ores[3] + left_steps * state.robots[3]
-        >= goal;
-}
+impl Solution {
+    fn new() -> Self {
+        Self { best: 0 }
+    }
 
-fn quality(
-    bp: &Blueprint,
-    state: &State,
-    max_steps: usize,
-    robots_cap: &[usize; 4],
-    geodes_max: &mut usize,
-) {
-    let ns: Vec<State> = (0..4)
-        .filter_map(|i| {
-            if state.robots[i] == robots_cap[i] {
-                return None;
-            }
+    fn recipe_delay(self: &Self, state: &State, recipe: &Recipe) -> usize {
+        return (0..4)
+            .filter_map(|ore| {
+                if recipe[ore] == 0 {
+                    return None;
+                } else if recipe[ore] < state.ores[ore] {
+                    return Some(0);
+                } else if state.robots[ore] <= 0 {
+                    return Some(usize::MAX);
+                } else {
+                    return Some(
+                        (recipe[ore] - state.ores[ore] + state.robots[ore] - 1) / state.robots[ore],
+                    );
+                }
+            })
+            .max()
+            .unwrap_or(0);
+    }
 
-            let recipe = bp.recipes[i];
+    fn winnable(self: &Self, state: &State, max_steps: usize) -> bool {
+        let left_steps = max_steps - state.steps;
+        return (left_steps - 1) * left_steps / 2 + state.ores[3] + left_steps * state.robots[3]
+            >= self.best;
+    }
 
-            let delay_steps = recipe_delay(state, &recipe);
-            let new_steps = (state.steps + 1).checked_add(delay_steps)?;
+    fn neighbors(
+        self: &Self,
+        bp: &Blueprint,
+        state: &State,
+        max_steps: usize,
+        robots_cap: &[usize; 4],
+    ) -> Vec<State> {
+        return (0..4)
+            .filter_map(|i| {
+                if state.robots[i] == robots_cap[i] {
+                    return None;
+                }
 
-            if new_steps >= max_steps {
-                return None;
-            }
+                let recipe = bp.recipes[i];
 
-            let mut new_ores = [0; 4];
-            let mut new_robots = [0; 4];
-            for ore in 0..4 {
-                new_ores[ore] =
-                    state.ores[ore] + state.robots[ore] * (delay_steps + 1) - recipe[ore];
-                new_robots[ore] = state.robots[ore] + usize::from(ore == i);
-            }
+                let delay_steps = self.recipe_delay(state, &recipe);
+                let new_steps = (state.steps + 1).checked_add(delay_steps)?;
 
-            let new_state = State {
-                steps: new_steps,
-                ores: new_ores,
-                robots: new_robots,
-            };
+                if new_steps >= max_steps {
+                    return None;
+                }
 
-            if !winnable(&new_state, max_steps, *geodes_max) {
-                return None;
-            }
+                let mut new_ores = [0; 4];
+                let mut new_robots = [0; 4];
+                for ore in 0..4 {
+                    new_ores[ore] =
+                        state.ores[ore] + state.robots[ore] * (delay_steps + 1) - recipe[ore];
+                    new_robots[ore] = state.robots[ore] + usize::from(ore == i);
+                }
 
-            return Some(new_state);
-        })
-        .collect();
+                let new_state = State {
+                    steps: new_steps,
+                    ores: new_ores,
+                    robots: new_robots,
+                };
 
-    if ns.is_empty() {
-       *geodes_max = (*geodes_max).max(
-            state.ores[3] + state.robots[3] * (max_steps - state.steps),
-        );
-    } else {
-        for n in &ns {
-            quality(bp, n, max_steps, robots_cap, geodes_max);
-        }
+                if !self.winnable(&new_state, max_steps) {
+                    return None;
+                }
+
+                return Some(new_state);
+            })
+            .collect();
+    }
+
+    fn quality(
+        self: &mut Self,
+        bp: &Blueprint,
+        state: &State,
+        max_steps: usize,
+        robots_cap: &[usize; 4],
+    ) -> usize {
+        let ns: Vec<State> = self.neighbors(bp, state, max_steps, robots_cap);
+
+        let value = if ns.is_empty() {
+            state.ores[3] + state.robots[3] * (max_steps - state.steps)
+        } else {
+            ns.iter()
+                .map(|n| self.quality(bp, n, max_steps, robots_cap))
+                .max()
+                .unwrap_or(0)
+        };
+
+        self.best = self.best.max(value);
+        return value;
     }
 }
 
@@ -130,9 +152,9 @@ fn solution(bp: &Blueprint, max_steps: usize) -> usize {
         robots_cap[i] = bp.recipes.iter().map(|r| r[i]).max().unwrap();
     }
 
-    let mut geodes_max = 0;
+    let mut sol = Solution::new();
 
-    quality(
+    return sol.quality(
         bp,
         &State {
             steps: 0,
@@ -141,10 +163,7 @@ fn solution(bp: &Blueprint, max_steps: usize) -> usize {
         },
         max_steps,
         &robots_cap,
-        &mut geodes_max,
     );
-
-    return geodes_max;
 }
 
 fn part1(input: &Vec<Blueprint>) -> String {
@@ -154,7 +173,11 @@ fn part1(input: &Vec<Blueprint>) -> String {
 }
 
 fn part2(input: &Vec<Blueprint>) -> String {
-    "".to_owned()
+    input
+        .iter()
+        .take(3)
+        .fold(1, |acc, bp| acc * solution(&bp, 32))
+        .to_string()
 }
 
 fn main() {
@@ -174,10 +197,11 @@ Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsid
         assert_eq!(super::part1(&input), "33");
     }
 
-    // #[test]
+    #[test]
     fn part2_example1() {
-        let input = super::parse_input("");
+        let input = super::parse_input("Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
+Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.");
 
-        assert_eq!(super::part2(&input), "");
+        assert_eq!(super::part2(&input), "3472");
     }
 }
