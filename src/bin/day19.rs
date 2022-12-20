@@ -126,7 +126,8 @@ fn quality(
     if ns.is_empty() {
         *best = (*best).max(state.ores[3] + state.robots[3] * (max_steps - state.steps));
     } else {
-        ns.iter().for_each(|n| quality(bp, n, max_steps, robots_cap, best));
+        ns.iter()
+            .for_each(|n| quality(bp, n, max_steps, robots_cap, best));
     };
 }
 
