@@ -219,9 +219,6 @@ fn part2((map, moves): &Input) -> String {
     let face = ivec2((0..).find(|&x| skeleton.contains(&ivec2(x, 0))).unwrap(), 0);
     skeleton.remove(&face);
 
-    // Start building a 3D planet surface.
-    let mut planet = HashSet::new();
-
     // Planet surface positions mapped back to 2D chart.
     let mut cube_chart = HashMap::new();
 
@@ -232,8 +229,6 @@ fn part2((map, moves): &Input) -> String {
             .collect::<Vec<_>>()
         {
             let chart_pos = face * square_size + ivec2(x, y);
-
-            let c = map.get(&chart_pos).unwrap();
 
             // Project to (slightly above) unit cube surface.
             // Sample cell centers so add the 0.5s
@@ -253,10 +248,6 @@ fn part2((map, moves): &Input) -> String {
 
             // This part is tricky, floating point artifacts can mess up even cover.
             cube_chart.insert(p3, chart_pos);
-
-            if c == &&Tile::Wall {
-                planet.insert(p3);
-            }
         }
 
         // Continue building cube faces while there are unmapped sectors.
@@ -273,55 +264,55 @@ fn part2((map, moves): &Input) -> String {
     }
 
     // Start out standing on top face.
-    let mut pos = ivec3(0, 0, -1);
+    let mut prev_pos = ivec3(0, 0, -1);
     // Facing right
-    let mut dir = ivec3(1, 0, 0);
+    let mut prev_dir = ivec3(1, 0, 0);
     // With the current up vector.
-    let mut up = ivec3(0, 0, -1);
+    let mut prev_up = ivec3(0, 0, -1);
 
     for m in moves {
         match m {
-            Move::Rotate(Rotation::Left) => dir = dir.cross(-up),
-            Move::Rotate(Rotation::Right) => dir = dir.cross(up),
+            Move::Rotate(Rotation::Left) => prev_dir = prev_dir.cross(-prev_up),
+            Move::Rotate(Rotation::Right) => prev_dir = prev_dir.cross(prev_up),
             Move::Step(n) => {
                 for _ in 0..*n {
-                    let mut p2 = pos + dir;
-                    let mut dir2 = dir;
-                    let mut up2 = up;
+                    let mut n_pos = prev_pos + prev_dir;
+                    let mut n_dir = prev_dir;
+                    let mut n_up = prev_up;
 
-                    if !cube_chart.contains_key(&p2) {
+                    if !cube_chart.contains_key(&n_pos) {
                         // We walked off the face.
                         // New direction points downwards from old frame.
-                        dir2 = -up;
+                        n_dir = -prev_up;
                         // And the new face has the same normal as the direction we
                         // were walking before.
-                        up2 = dir;
+                        n_up = prev_dir;
 
                         // Step along the new dir to get back on surface.
-                        p2 += dir2;
+                        n_pos += n_dir;
                     }
 
-                    if map.get(&cube_chart[&p2]).unwrap() == &&Tile::Wall {
+                    if map.get(&cube_chart[&n_pos]).unwrap() == &&Tile::Wall {
                         break;
                     } else {
-                        pos = p2;
-                        dir = dir2;
-                        up = up2;
+                        prev_pos = n_pos;
+                        prev_dir = n_dir;
+                        prev_up = n_up;
                     }
                 }
             }
         }
     }
 
-    let chart_pos = cube_chart[&pos];
+    let chart_pos = cube_chart[&prev_pos];
 
     // Reconstruct facing.
-    let facing_vec = if let Some(&p2) = cube_chart.get(&(pos + dir)) {
+    let facing_vec = if let Some(&p2) = cube_chart.get(&(prev_pos + prev_dir)) {
         // Either next position is on chart...
         p2 - chart_pos
     } else {
         // ...or the previous one is.
-        chart_pos - cube_chart[&(pos - dir)]
+        chart_pos - cube_chart[&(prev_pos - prev_dir)]
     };
     let facing = [ivec2(1, 0), ivec2(0, 1), ivec2(-1, 0), ivec2(0, -1)]
         .iter()
