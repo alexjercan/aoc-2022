@@ -10,3 +10,4 @@ path = "src/util/lib.rs"
 [dependencies]
 itertools = "0.10.5"
 take-until = "0.1.0"
+glam = "0.22.0"

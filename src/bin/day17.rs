@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::{collections::HashSet, str::FromStr};
 
 #[derive(Debug)]
@@ -261,6 +260,8 @@ fn part1(input: &Vec<Push>) -> String {
     for _ in 0..2022 {
         spawner.drop(input);
     }
+
+    println!("{}", spawner.to_string());
 
     return spawner.top.to_string();
 }
