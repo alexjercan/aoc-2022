@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 use glam::{ivec2, IVec2};
 
@@ -76,19 +76,28 @@ fn propose(position: IVec2, others: &HashSet<IVec2>, dirs: [Dir; 4]) -> IVec2 {
 }
 
 fn round(elves: &HashSet<IVec2>, dirs: [Dir; 4]) -> HashSet<IVec2> {
-    elves.iter().map(|&elf| {
-        (propose(elf, elves, dirs), elf)
-    }).fold(HashMap::<IVec2, Vec<IVec2>>::new(), |mut acc, (prop, elf)| {
-        acc.entry(prop).and_modify(|e| e.push(elf)).or_insert(vec![elf]);
+    elves
+        .iter()
+        .map(|&elf| (propose(elf, elves, dirs), elf))
+        .fold(
+            HashMap::<IVec2, Vec<IVec2>>::new(),
+            |mut acc, (prop, elf)| {
+                acc.entry(prop)
+                    .and_modify(|e| e.push(elf))
+                    .or_insert(vec![elf]);
 
-        return acc;
-    }).iter().flat_map(|(&prop, elves)| {
-        if elves.len() == 1 {
-            return vec![prop];
-        } else {
-            return elves.to_owned();
-        }
-    }).collect()
+                return acc;
+            },
+        )
+        .iter()
+        .flat_map(|(&prop, elves)| {
+            if elves.len() == 1 {
+                return vec![prop];
+            } else {
+                return elves.to_owned();
+            }
+        })
+        .collect()
 }
 
 fn part1(input: &HashSet<IVec2>) -> String {
@@ -100,7 +109,7 @@ fn part1(input: &HashSet<IVec2>) -> String {
 
         let used = dirs[0];
         for i in 0..3 {
-            dirs[i] = dirs[i+1];
+            dirs[i] = dirs[i + 1];
         }
         dirs[3] = used;
     }
@@ -122,7 +131,6 @@ fn part1(input: &HashSet<IVec2>) -> String {
             return (min, max);
         });
 
-
     return ((max_x - min_x + 1) * (max_y - min_y + 1) - elves.len() as i32).to_string();
 }
 
@@ -139,7 +147,7 @@ fn part2(input: &HashSet<IVec2>) -> String {
 
         let used = dirs[0];
         for i in 0..3 {
-            dirs[i] = dirs[i+1];
+            dirs[i] = dirs[i + 1];
         }
         dirs[3] = used;
 
