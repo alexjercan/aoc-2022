@@ -1,99 +1,53 @@
+use itertools::Itertools;
 use pathfinding::prelude::astar;
-use std::collections::BTreeMap;
+use std::collections::HashSet;
 
-const DIR_5: [(i32, i32); 5] = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)];
+type Point = (i32, i32);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum Dir {
-    Up,
-    Down,
-    Left,
-    Right,
+const DIR_5: [Point; 5] = [(0, -1), (0, 1), (-1, 0), (1, 0), (0, 0)];
+const DIR_C: [char; 4] = ['^', 'v', '<', '>'];
+
+fn step(pos: Point, dir: Point) -> Point {
+    (pos.0 + dir.0, pos.1 + dir.1)
 }
 
-impl TryFrom<char> for Dir {
-    type Error = aoc::error::Error;
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        match value {
-            '^' => Ok(Dir::Up),
-            '>' => Ok(Dir::Right),
-            'v' => Ok(Dir::Down),
-            '<' => Ok(Dir::Left),
-            _ => Err(Self::Error::ParseError("error".to_string())),
-        }
-    }
-}
-
-impl Into<char> for Dir {
-    fn into(self) -> char {
-        match self {
-            Dir::Up => '^',
-            Dir::Down => 'v',
-            Dir::Left => '<',
-            Dir::Right => '>',
-        }
-    }
-}
-
-impl Dir {
-    fn step(self: &Self, pos: (i32, i32)) -> (i32, i32) {
-        (
-            pos.0 + DIR_5[*self as usize].0,
-            pos.1 + DIR_5[*self as usize].1,
-        )
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 struct Map {
-    blizzards: BTreeMap<(i32, i32), Vec<Dir>>,
+    blizzards: Vec<HashSet<Point>>,
     width: i32,
     height: i32,
 }
 
 impl Map {
-    fn valid(self: &Self, pos: (i32, i32)) -> bool {
-        return 0 < pos.0
-            && pos.0 < self.width as i32
-            && 0 < pos.1
-            && pos.1 < self.height as i32
-            && !self.blizzards.contains_key(&pos);
-    }
+    fn blizzard(self: &Self, x: i32, y: i32) -> char {
+        let bs: Vec<char> = self
+            .blizzards
+            .iter()
+            .enumerate()
+            .filter_map(|(dir, bs)| {
+                if bs.contains(&(x, y)) {
+                    return Some(DIR_C[dir]);
+                } else {
+                    return None;
+                }
+            })
+            .collect();
 
-    fn tick(self: &Self) -> Self {
-        let n_blizzards: BTreeMap<(i32, i32), Vec<Dir>> =
-            self.blizzards
-                .iter()
-                .fold(BTreeMap::new(), |mut acc, (pos, bs)| {
-                    bs.iter().for_each(|b| {
-                        let mut n_pos = b.step(*pos);
-                        if n_pos.0 < 1 {
-                            n_pos.0 = self.width - 1;
-                        }
-                        if n_pos.1 < 1 {
-                            n_pos.1 = self.height - 1;
-                        }
-                        if n_pos.0 > self.width - 1 {
-                            n_pos.0 = 1;
-                        }
-                        if n_pos.1 > self.height - 1 {
-                            n_pos.1 = 1;
-                        }
+        if bs.len() == 0 {
+            return '.';
+        }
 
-                        acc.entry(n_pos)
-                            .and_modify(|e| e.push(*b))
-                            .or_insert(vec![*b]);
-                    });
+        if bs.len() == 1 {
+            return bs[0];
+        }
 
-                    return acc;
-                });
-
-        return Map {
-            blizzards: n_blizzards,
-            width: self.width,
-            height: self.height,
-        };
+        return bs
+            .len()
+            .to_string()
+            .chars()
+            .into_iter()
+            .next()
+            .unwrap_or('?');
     }
 }
 
@@ -103,21 +57,7 @@ impl ToString for Map {
             .map(|y| {
                 (1..self.width)
                     .map(|x| {
-                        if let Some(cell) = self.blizzards.get(&(x as i32, y as i32)) {
-                            if cell.len() > 1 {
-                                return cell
-                                    .len()
-                                    .to_string()
-                                    .chars()
-                                    .into_iter()
-                                    .next()
-                                    .unwrap_or('?');
-                            } else {
-                                return cell[0].into();
-                            }
-                        } else {
-                            return '.';
-                        }
+                        return self.blizzard(x as i32, y as i32);
                     })
                     .collect::<String>()
             })
@@ -128,9 +68,50 @@ impl ToString for Map {
 
 #[derive(Debug)]
 struct Input {
-    map: Map,
+    blizzards: Vec<Vec<HashSet<(i32, i32)>>>,
+    width: i32,
+    height: i32,
     source: (i32, i32),
     dest: (i32, i32),
+}
+
+fn ticks(
+    blizzard: &HashSet<(i32, i32)>,
+    dir: Point,
+    width: i32,
+    height: i32,
+) -> Vec<HashSet<Point>> {
+    let mut blizzards = vec![blizzard.clone()];
+    loop {
+        let n_blizzard = blizzards[blizzards.len() - 1]
+            .iter()
+            .map(|&pos| {
+                let mut n_pos = step(pos, dir);
+                if n_pos.0 < 1 {
+                    n_pos.0 = width - 1;
+                }
+                if n_pos.1 < 1 {
+                    n_pos.1 = height - 1;
+                }
+                if n_pos.0 > width - 1 {
+                    n_pos.0 = 1;
+                }
+                if n_pos.1 > height - 1 {
+                    n_pos.1 = 1;
+                }
+
+                return n_pos;
+            })
+            .collect();
+
+        if n_blizzard == blizzards[0] {
+            break;
+        }
+
+        blizzards.push(n_blizzard);
+    }
+
+    return blizzards;
 }
 
 fn parse_input(input: impl AsRef<str>) -> Input {
@@ -148,84 +129,110 @@ fn parse_input(input: impl AsRef<str>) -> Input {
         .position(|c| c == '.')
         .expect("to have an exit point");
 
-    let blizzards = lines
+    let blizzards: Vec<HashSet<(i32, i32)>> = lines
         .iter()
         .enumerate()
         .flat_map(|(y, line)| {
             line.chars().enumerate().filter_map(move |(x, c)| {
-                Some(((x as i32, y as i32), vec![Dir::try_from(c).ok()?]))
+                let dir = DIR_C.iter().position(|&d| d == c)?;
+                return Some((dir, (x as i32, y as i32)));
             })
         })
-        .collect::<BTreeMap<(i32, i32), Vec<Dir>>>();
+        .into_group_map()
+        .into_iter()
+        .sorted()
+        .map(|(_, v)| HashSet::from_iter(v.into_iter()))
+        .collect();
+
+    let blizzards: Vec<_> = (0..DIR_C.len())
+        .into_iter()
+        .map(|dir| ticks(&blizzards[dir], DIR_5[dir], width as i32, height as i32))
+        .collect();
 
     return Input {
-        map: Map {
-            blizzards,
-            width: width as i32,
-            height: height as i32,
-        },
+        blizzards,
+        width: width as i32,
+        height: height as i32,
         source: (source as i32, 0),
         dest: (dest as i32, height as i32),
     };
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct State {
-    map: Map,
     pos: (i32, i32),
-    source: (i32, i32),
-    dest: (i32, i32),
+    minute: usize,
 }
 
-fn successors(state: &State) -> Vec<(State, i32)> {
-    let n_map = state.map.tick();
+fn valid(input: &Input, state: &State) -> bool {
+    0 < state.pos.0
+        && state.pos.0 < input.width as i32
+        && 0 < state.pos.1
+        && state.pos.1 < input.height as i32
+        && input
+            .blizzards
+            .iter()
+            .all(|bs| !bs[state.minute % bs.len()].contains(&state.pos))
+}
 
-    return DIR_5
+fn successors(input: &Input, state: &State) -> Vec<(State, i32)> {
+    DIR_5
         .iter()
         .filter_map(|&d| {
-            let n_pos = (state.pos.0 + d.0, state.pos.1 + d.1);
+            let n_state = State {
+                pos: (state.pos.0 + d.0, state.pos.1 + d.1),
+                minute: state.minute + 1,
+            };
 
-            if n_map.valid(n_pos) || n_pos == state.dest || n_pos == state.source {
-                return Some((
-                    State {
-                        map: n_map.clone(),
-                        pos: n_pos,
-                        source: state.source,
-                        dest: state.dest,
-                    },
-                    1,
-                ));
+            if valid(input, &n_state) || n_state.pos == input.dest || n_state.pos == input.source {
+                return Some((n_state, 1));
             } else {
                 return None;
             }
         })
-        .collect();
+        .collect()
 }
 
-fn heuristic(state: &State) -> i32 {
-    return (state.dest.0 - state.pos.0).abs() + (state.dest.1 - state.pos.1).abs();
-}
-
-fn success(state: &State) -> bool {
-    state.dest == state.pos
+fn manhattan(a: Point, b: Point) -> i32 {
+    return (a.0 - b.0).abs() + (a.1 - b.1).abs();
 }
 
 fn part1(input: &Input) -> String {
-    let start = State {
-        map: input.map.clone(),
-        pos: input.source,
-        source: input.source,
-        dest: input.dest,
-    };
+    let state = State { pos: input.source, minute: 0 };
 
-    let (_, cost) = astar(&start, successors, heuristic, success)
-        .expect("to have a solution");
+    let (_, cost) = astar(&state,
+        |s| successors(input, s),
+        |s| manhattan(s.pos, input.dest),
+        |s| s.pos == input.dest,
+    ).expect("to have solution");
 
     return cost.to_string();
 }
 
 fn part2(input: &Input) -> String {
-    "".to_owned()
+    let state = State { pos: input.source, minute: 0 };
+
+    let (states, cost1) = astar(&state,
+        |s| successors(input, s),
+        |s| manhattan(s.pos, input.dest),
+        |s| s.pos == input.dest,
+    ).expect("to have solution");
+
+    let state = State { pos: input.dest, minute: states[states.len() - 1].minute };
+    let (states, cost2) = astar(&state,
+        |s| successors(input, s),
+        |s| manhattan(s.pos, input.source),
+        |s| s.pos == input.source,
+    ).expect("to have solution");
+
+    let state = State { pos: input.source, minute: states[states.len() - 1].minute };
+    let (_, cost3) = astar(&state,
+        |s| successors(input, s),
+        |s| manhattan(s.pos, input.dest),
+        |s| s.pos == input.dest,
+    ).expect("to have solution");
+
+    return (cost1 + cost2 + cost3).to_string();
 }
 
 fn main() {
@@ -251,10 +258,18 @@ mod tests {
         assert_eq!(super::part1(&input), "18");
     }
 
-    // #[test]
+    #[test]
     fn part2_example1() {
-        let input = super::parse_input("");
+        let input = super::parse_input(
+            "#.######
+#>>.<^<#
+#.<..<<#
+#>v.><>#
+#<^v^^>#
+######.#",
+        );
 
-        assert_eq!(super::part2(&input), "");
+
+        assert_eq!(super::part2(&input), "54");
     }
 }
