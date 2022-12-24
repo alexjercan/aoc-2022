@@ -392,7 +392,15 @@ fn part1(input: &State) -> String {
 }
 
 fn part2(input: &State) -> String {
-    "".to_owned()
+    let (_, cost) = astar(
+        input,
+        |s| s.neighbors(),
+        |s| s.heuristic2(),
+        |s| s.success2(),
+    )
+    .expect("to have solution");
+
+    return cost.to_string();
 }
 
 fn main() {
@@ -418,10 +426,17 @@ mod tests {
         assert_eq!(super::part1(&input), "18");
     }
 
-    // #[test]
+    #[test]
     fn part2_example1() {
-        let input = super::parse_input("");
+        let input = super::parse_input(
+            "#.######
+#>>.<^<#
+#.<..<<#
+#>v.><>#
+#<^v^^>#
+######.#",
+        );
 
-        assert_eq!(super::part2(&input), "");
+        assert_eq!(super::part2(&input), "54");
     }
 }
