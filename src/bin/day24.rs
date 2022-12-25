@@ -143,39 +143,59 @@ fn manhattan(a: Point, b: Point) -> i32 {
 }
 
 fn part1(input: &Input) -> String {
-    let state = State { pos: input.source, minute: 0 };
+    let state = State {
+        pos: input.source,
+        minute: 0,
+    };
 
-    let (_, cost) = astar(&state,
+    let (_, cost) = astar(
+        &state,
         |s| successors(input, s),
         |s| manhattan(s.pos, input.dest),
         |s| s.pos == input.dest,
-    ).expect("to have solution");
+    )
+    .expect("to have solution");
 
     return cost.to_string();
 }
 
 fn part2(input: &Input) -> String {
-    let state = State { pos: input.source, minute: 0 };
+    let state = State {
+        pos: input.source,
+        minute: 0,
+    };
 
-    let (states, cost1) = astar(&state,
+    let (states, cost1) = astar(
+        &state,
         |s| successors(input, s),
         |s| manhattan(s.pos, input.dest),
         |s| s.pos == input.dest,
-    ).expect("to have solution");
+    )
+    .expect("to have solution");
 
-    let state = State { pos: input.dest, minute: states[states.len() - 1].minute };
-    let (states, cost2) = astar(&state,
+    let state = State {
+        pos: input.dest,
+        minute: states[states.len() - 1].minute,
+    };
+    let (states, cost2) = astar(
+        &state,
         |s| successors(input, s),
         |s| manhattan(s.pos, input.source),
         |s| s.pos == input.source,
-    ).expect("to have solution");
+    )
+    .expect("to have solution");
 
-    let state = State { pos: input.source, minute: states[states.len() - 1].minute };
-    let (_, cost3) = astar(&state,
+    let state = State {
+        pos: input.source,
+        minute: states[states.len() - 1].minute,
+    };
+    let (_, cost3) = astar(
+        &state,
         |s| successors(input, s),
         |s| manhattan(s.pos, input.dest),
         |s| s.pos == input.dest,
-    ).expect("to have solution");
+    )
+    .expect("to have solution");
 
     return (cost1 + cost2 + cost3).to_string();
 }
