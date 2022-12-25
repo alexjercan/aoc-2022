@@ -29,9 +29,7 @@ fn snafu_to_i64(snafu: impl AsRef<str>) -> Option<i64> {
             .collect::<Option<Vec<_>>>()?
             .iter()
             .rev()
-            .fold((0, 1), |(num, base), d| {
-                (num + base * d, base * 5)
-            })
+            .fold((0, 1), |(num, base), d| (num + base * d, base * 5))
             .0,
     )
 }
@@ -47,9 +45,9 @@ fn i64_to_snafu(num: i64) -> Option<String> {
     }
 
     for i in 0..digits.len() - 1 {
-        if digits[i] >= 3{
+        if digits[i] >= 3 {
             digits[i] -= 5;
-            digits[i+1] += 1;
+            digits[i + 1] += 1;
         }
     }
 
@@ -59,7 +57,11 @@ fn i64_to_snafu(num: i64) -> Option<String> {
         digits.push(1);
     }
 
-    return digits.into_iter().rev().map(digit_to_snafu).collect::<Option<String>>();
+    return digits
+        .into_iter()
+        .rev()
+        .map(digit_to_snafu)
+        .collect::<Option<String>>();
 }
 
 fn parse_input(input: impl AsRef<str>) -> Vec<i64> {
